@@ -1,24 +1,21 @@
-package com.nawa.cookit
+package com.nawa.cookit.ui.theme
 
-import android.os.Bundle
 import android.util.Log
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,32 +28,64 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.nawa.cookit.api.api
-import com.nawa.cookit.ui.theme.CookItTheme
+import com.nawa.cookit.model.CategoryDto
+import com.nawa.cookit.model.MealDto
+import kotlin.collections.emptyList
 
+@Composable
+fun MealsColumn(
+    category:String,
+    modifier: Modifier = Modifier
+) {
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            CookItTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    CategoriesRow(modifier = Modifier.padding(innerPadding))
-                }
-            }
+    var meals by remember {
+        mutableStateOf<List<MealDto>>(emptyList())
+    }
+
+    LaunchedEffect(category) {
+        try {
+            val response = api.getMealsByCategory(category)
+            meals = response.meals ?: emptyList()
+            Log.d("API", "Meals: $meals")
+        } catch (e: Exception) {
+            Log.e("API", "Error", e)
         }
+    }
 
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = modifier,
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(meals) { meal ->
+            FoodItemCard(
+                title = meal.strMeal,
+                imageUrl = meal.strMealThumb
+            )
+
+        }
     }
 }
+
+
+
+
+
 @Composable
 fun CategoriesRow(
-    modifier: Modifier = Modifier
+    selectedCategory: String?,
+    modifier: Modifier = Modifier,
+    onClick: (String) -> Unit
 ) {
 
     var categories by remember {
@@ -94,20 +123,24 @@ fun CategoriesRow(
     ) {
 
         items(categories) { category ->
+            val isSelected = category.strCategory == selectedCategory
 
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+
             ) {
 
                 AsyncImage(
                     model = category.strCategoryThumb,
                     contentDescription = category.strCategory,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(90.dp)
                         .clip(CircleShape)
+                        .clickable { onClick(category.strCategory) }
                         .border(
-                            width = 4.dp,
-                            brush = rainbowColorsBrush,
+                            width = if (isSelected) 4.dp else 2.dp,
+                            brush = if (isSelected)  SolidColor(Color.Green)else rainbowColorsBrush,
                             shape = CircleShape
                         )
                 )
@@ -119,7 +152,7 @@ fun CategoriesRow(
                 Text(
                     text = category.strCategory,
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                 )
             }
         }
@@ -128,5 +161,10 @@ fun CategoriesRow(
 @Preview(showBackground = false, showSystemUi = true)
 @Composable
 private fun MealCategoryPreview() {
-    CategoriesRow()
+    CategoriesRow("Beef",onClick = {})
+}
+@Preview(showSystemUi = true)
+@Composable
+private fun MealsColumnPreview() {
+    MealsColumn("Beef")
 }

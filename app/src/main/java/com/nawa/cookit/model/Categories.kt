@@ -1,4 +1,4 @@
-package com.nawa.cookit
+package com.nawa.cookit.model
 
 // Categories Response
 data class CategoriesResponse(
