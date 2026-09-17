@@ -84,7 +84,7 @@ fun MainScreen(modifier: Modifier) {
             ) {
                 Text(
                     text = stringResource(R.string.select_a_category_to_show_available_meals),
-                    fontSize = 18.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
